@@ -144,7 +144,7 @@ Se hace una lectura “burst” de **14 bytes** desde el registro `ACCEL_XOUT_H 
 Con eso se obtienen `ax_raw`, `ay_raw`, `az_raw`, `gx_raw`, etc.
 
 ### Rangos (full-scale) del MPU-6050
-El `.ioc` **no** configura esto. Esto se configura escribiendo registros del **MPU-6050 por I2C** en el `main.c`.
+Se configura escribiendo registros del **MPU-6050 por I2C** en el `main.c`.
 
 Actualmente el código configura:
 - Acelerómetro **±8g** (registro `ACCEL_CONFIG = 0x1C`, bits `AFS_SEL = 2`)
@@ -161,10 +161,6 @@ Se combina:
 - una estimación rápida basada en integrar el **giroscopio**, y
 - una corrección lenta basada en el **acelerómetro** (gravedad),
 
-con una ecuación típica del estilo:
-
-- `tita = 0.98 * (tita_prev + gx*dt) + 0.02 * accel_tita`
-
 Esto permite buena respuesta a movimientos rápidos sin que el ángulo derive ("driftee") indefinidamente.
 1) **Ángulo por acelerómetro**  
 Se calcula un ángulo “instantáneo” usando la gravedad (en grados), por ejemplo:
@@ -180,7 +176,7 @@ Se integra la velocidad angular:
 
 Esto es suave y responde rápido, pero **deriva** (bias/offset del gyro).
 
-3) **Fusión (complementary filter)**  
+3) **Fusión (filtro complementario)**  
 Se combinan ambas mediciones:
 
 - `tita = 0.98 * (tita_prev + gx_dps*dt) + 0.02 * accel_tita`
