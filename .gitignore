@@ -1,6 +1,9 @@
 #metadata
 .metadata/
 
+# reference/inspiration projects, not part of the build
+inspo/
+
 #Debug
 Debug/
 Release/
