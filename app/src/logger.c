@@ -56,9 +56,11 @@
 
 /********************** external data definition *****************************/
 
+#if 1 == LOGGER_CONFIG_ENABLE
 static char logger_msg_buffer_[LOGGER_CONFIG_MAXLEN];
 char* const logger_msg = logger_msg_buffer_;
 int logger_msg_len;
+#endif
 
 /********************** internal functions definition ************************/
 
@@ -71,11 +73,9 @@ void logger_log_print_(char* const msg)
 	fflush(stdout);
 }
 #else
-extern UART_HandleTypeDef huart2;
-
 void logger_log_print_(char* const msg)
 {
-	HAL_UART_Transmit(&huart2, (uint8_t*)msg, (uint16_t)strlen(msg), HAL_MAX_DELAY);
+    return;
 }
 #endif
 

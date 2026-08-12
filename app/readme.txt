@@ -1,9 +1,9 @@
-Example: tdse-tp0_05-hw_sw_test
+Example: tdse-tpf-integrado
 
  Description:
  Bare Metal - Event-Triggered Systems (ETS)
  App - retarget_printf_to_Console
- Project for STM32 Project (STM32CubeIDE Version: 1.7.0)
+ Project for STM32 Project (STM32CubeIDE Version: 1.17.0)
 
   SystemCoreClock     => 64MHz (15.625nS)
   SysTick Rate Hertz  => 1000 ticks per second (1mS)
@@ -11,15 +11,16 @@ Example: tdse-tp0_05-hw_sw_test
   app.c (app.h)
    Endless loops, which execute tasks with fixed computing time. This 
    sequential execution is only deviated from when an interrupt event occurs.
+   Cyclic Executive (Update by Time Code, period = 1mS)
 
-  task_a.c (task_a.h) 
-   Blocking Code
-
-  task_b.c (task_b.h)
-   Non-Blocking Code
-
-  task_c.c (task_c.h)
-   Update by Time Code
+  task_sensor.c (task_sensor.h, task_sensor_attribute.h) 
+   Non-Blocking & Update By Time Code -> Sensor Modeling
+   
+  task_menu.c (task_menu.h) 
+   Non-Blocking & Update By Time Code -> Menu Code Integration
+  
+  display.c (display.h)
+   Non-Blocking Code -> Display Code Library
 
   logger.h (logger.c)
    Utilities for Retarget "printf" to Console
@@ -27,6 +28,9 @@ Example: tdse-tp0_05-hw_sw_test
   dwt.h
    Utilities for Mesure "clock cycle" and "execution time" of code
   
+  systick.c (systick.h) 
+   Utilities for delay "microseconds"
+
   Special connection requirements:
    There are no special connection requirements for this example.
 

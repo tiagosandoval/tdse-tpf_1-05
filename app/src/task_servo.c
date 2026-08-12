@@ -17,7 +17,7 @@
 
 /********************** macros and definitions *******************************/
 
-// --- SERVO PWM on TIM2 CH1 (PA0) ---
+// --- SERVO PWM on TIM2 CH2 (PA1) ---
 // Timer tick = 1 us, ARR = 19999 (20 ms period)
 
 #define SERVO_MIN_US        1000
@@ -71,7 +71,7 @@ void task_servo_init(void *parameters)
 	/* Print out: Task Initialized */
 	LOGGER_LOG("  %s is running - %s\r\n", GET_NAME(task_servo_init), p_task_servo);
 
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
 	cur_cmd_deg = 90.0f;
 	integral = 0.0f;
@@ -157,7 +157,15 @@ void task_servo_update(void *parameters)
 		return; // hold last commanded position -- no fallback to a default angle
 	}
 
+	// El actuador solamente estabiliza dentro de la pantalla Control PID.
+	// En el resto del menu conserva la ultima posicion comandada.
+	if (!shared_data->pid_enabled) {
+		integral = 0.0f;
+		return;
+	}
+
 	float error = shared_data->setpoint_deg - shared_data->tita_deg;
+	// float error = shared_data->tita_deg - shared_data->setpoint_deg;
 	if (fabsf(error) < DEADBAND_DEG) {
 		error = 0.0f;
 	}
@@ -180,7 +188,7 @@ static void servo_write_us(uint16_t us)
 {
 	if (us < SERVO_MIN_US) us = SERVO_MIN_US;
 	if (us > SERVO_MAX_US) us = SERVO_MAX_US;
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, us);
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, us);
 }
 
 // For a normal 180 deg servo (SG90):

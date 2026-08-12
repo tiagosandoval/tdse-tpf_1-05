@@ -7,6 +7,7 @@ inspo/
 #Debug
 Debug/
 Release/
+/*.launch
 
 
 # Prerequisites
@@ -22,6 +23,10 @@ Release/
 *.ilk
 *.map
 *.exp
+
+# Precompiled Headers
+*.gch
+*.pch
 
 # Libraries
 *.lib

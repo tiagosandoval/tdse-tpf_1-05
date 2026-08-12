@@ -35,28 +35,28 @@
  * @version	v1.0.0
  */
 
-
-/* Project includes. */
+/********************** inclusions *******************************************/
+/* Project includes */
 #include "main.h"
 
-/* Demo includes. */
+/* Demo includes */
 #include "logger.h"
 #include "dwt.h"
 
-/* Application & Tasks includes. */
-#include "app.h"
+/* Application & Tasks includes */
 #include "board.h"
+#include "task_sensor.h"
+#include "task_menu.h"
+#include "app.h"
 #include "task_imu.h"
 #include "task_servo.h"
 
-
 /********************** macros and definitions *******************************/
-
-
 #define G_APP_CNT_INI		0ul
 #define G_APP_TICK_CNT_INI	0ul
 
 #define TASK_X_WCET_INI		0ul
+#define TASK_X_DELAY_MIN	0ul
 
 typedef struct {
 	void (*task_init)(void *);		// Pointer to task (must be a
@@ -71,61 +71,66 @@ typedef struct {
 } task_dta_t;
 
 /********************** internal data declaration ****************************/
+const task_cfg_t task_cfg_list[] = {
+    {task_sensor_init, task_sensor_update, NULL},
 
-
-shared_data_type shared_data;
-
-const task_cfg_t task_cfg_list[]	= {
-#if (TEST_X == TEST_NORMAL) || (TEST_X == TEST_IMU_ONLY) || (TEST_X == TEST_I2C_SCAN) || (TEST_X == TEST_AXIS_CAL)
-		{task_imu_init,   task_imu_update,   &shared_data},	// must run before task_servo so it sees this tick's fresh tita_deg
+#if (TEST_X == TEST_NORMAL) || (TEST_X == TEST_IMU_ONLY) || \
+    (TEST_X == TEST_I2C_SCAN) || (TEST_X == TEST_AXIS_CAL)
+    {task_imu_init, task_imu_update, &shared_data},
 #endif
-#if (TEST_X == TEST_NORMAL) || (TEST_X == TEST_SERVO_ONLY) || (TEST_X == TEST_AXIS_CAL)
-		{task_servo_init, task_servo_update, &shared_data},
+
+#if (TEST_X == TEST_NORMAL) || (TEST_X == TEST_SERVO_ONLY) || \
+    (TEST_X == TEST_AXIS_CAL)
+    {task_servo_init, task_servo_update, &shared_data},
 #endif
+
+    {task_menu_init, task_menu_update, &shared_data}
 };
 
-#define TASK_QTY (sizeof(task_cfg_list)/sizeof(task_cfg_t))
+#define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
 
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
+const char *p_sys	= " Bare Metal - Event-Triggered Systems (ETS)";
+const char *p_app	= " App - Interactive Menu";
+shared_data_type shared_data;
 
-
-const char *p_sys	= " Bare Metal - Event-Triggered Systems (ETS)\r\n";
-const char *p_app	= " Servo Self-Leveling Stabilizer\r\n";
-
-
-/********************** external data declaration *****************************/
-
-
+/********************** external data declaration ****************************/
 uint32_t g_app_cnt;
-uint32_t g_app_time_us;
+uint32_t g_app_runtime_us;
 
 volatile uint32_t g_app_tick_cnt;
+
 task_dta_t task_dta_list[TASK_QTY];
 
 /********************** external functions definition ************************/
-
 void app_init(void)
 {
 	uint32_t index;
 
 	/* Print out: Application Initialized */
-	LOGGER_LOG("\r\n");
-	LOGGER_LOG("%s is running - Tick [mS] = %lu\r\n", GET_NAME(app_init), HAL_GetTick());
+	LOGGER_INFO(" ");
+	LOGGER_INFO("%s is running - Tick [mS] = %lu", GET_NAME(app_init), HAL_GetTick());
 
-	LOGGER_LOG(p_sys);
-	LOGGER_LOG(p_app);
+	LOGGER_INFO(p_sys);
+	LOGGER_INFO(p_app);
 
+	/* Init & Print out: Application execution counter */
 	g_app_cnt = G_APP_CNT_INI;
+	LOGGER_INFO(" %s = %lu", GET_NAME(g_app_cnt), g_app_cnt);
 
-	/* Print out: Application execution counter */
-	LOGGER_LOG(" %s = %lu\r\n", GET_NAME(g_app_cnt), g_app_cnt);
+	/* Init Cycle Counter */
+	cycle_counter_init();
+	shared_data.tita_deg = 0.0f;
+	shared_data.imu_ok = false;
+	shared_data.setpoint_deg = 0.0f;
+	shared_data.servo_cmd_deg = 0.0f;
+	shared_data.pid_enabled = false;
 
-	/* Go through the task arrays */
+    /* Go through the task arrays */
 	for (index = 0; TASK_QTY > index; index++)
 	{
-
 		/* Run task_x_init */
 		(*task_cfg_list[index].task_init)(task_cfg_list[index].parameters);
 
@@ -133,80 +138,81 @@ void app_init(void)
 		task_dta_list[index].WCET = TASK_X_WCET_INI;
 	}
 
-	cycle_counter_init();
+	/* Protect shared resource */
+	__asm("CPSID i");	/* disable interrupts */
+	/* Init Tick Counter */
+	g_app_tick_cnt = G_APP_TICK_CNT_INI;
+
+	g_task_sensor_tick_cnt = G_APP_TICK_CNT_INI;
+	g_task_menu_tick_cnt = G_APP_TICK_CNT_INI;
+    __asm("CPSIE i");	/* enable interrupts */
 }
 
 void app_update(void)
 {
-
 	uint32_t index;
-	//uint32_t cycle_counter;
+	bool b_time_update_required = false;
 	uint32_t cycle_counter_time_us;
 
-	/* Check if it's time to run tasks */
-	if (G_APP_TICK_CNT_INI < g_app_tick_cnt)
+	/* Protect shared resource */
+	__asm("CPSID i");	/* disable interrupts */
+    if (G_APP_TICK_CNT_INI < g_app_tick_cnt)
     {
-
+		/* Update Tick Counter */
     	g_app_tick_cnt--;
+    	b_time_update_required = true;
+    }
+    __asm("CPSIE i");	/* enable interrupts */
 
+	/* Check if it's time to run tasks */
+    while (b_time_update_required)
+    {
     	/* Update App Counter */
     	g_app_cnt++;
-    	g_app_time_us = 0;
-
-		/* Print out: Application execution counter */
-		//LOGGER_LOG(" %s = %lu\r\n", GET_NAME(g_app_cnt), g_app_cnt);
+    	g_app_runtime_us = 0;
 
 		/* Go through the task arrays */
 		for (index = 0; TASK_QTY > index; index++)
 		{
-
 			cycle_counter_reset();
 
-			/* Run task_x_update */
+    		/* Run task_x_update */
 			(*task_cfg_list[index].task_update)(task_cfg_list[index].parameters);
 
-
-			//cycle_counter = cycle_counter_get();
-			cycle_counter_time_us = cycle_counter_time_us();
+			cycle_counter_time_us = cycle_counter_get_time_us();
 
 			/* Update variables */
-			g_app_time_us += cycle_counter_time_us;
+			g_app_runtime_us += cycle_counter_time_us;
 
 			if (task_dta_list[index].WCET < cycle_counter_time_us)
 			{
 				task_dta_list[index].WCET = cycle_counter_time_us;
 			}
-
-
-			/* Print out: Cycle Counter */
-			//LOGGER_LOG(" %s: %lu - %s: %lu uS\r\n", GET_NAME(cycle_counter), cycle_counter, GET_NAME(cycle_counter_time_us), cycle_counter_time_us);
-			//LOGGER_LOG(" %s: %lu uS\r\n", GET_NAME(g_app_time_us), g_app_time_us);
 		}
 
-#if TEST_X == TEST_NORMAL
-		LOGGER_LOG("sp=%.2f meas=%.2f cmd=%.2f ok=%d\r\n",
-				shared_data.setpoint_deg, shared_data.tita_deg,
-				shared_data.servo_cmd_deg, shared_data.imu_ok);
-#endif
-    }
+		/* Protect shared resource */
+		__asm("CPSID i");	/* disable interrupts */
+		if (G_APP_TICK_CNT_INI < g_app_tick_cnt)
+		{
+			/* Update Tick Counter */
+			g_app_tick_cnt--;
+			b_time_update_required = true;
+		}
+		else
+		{
+			b_time_update_required = false;
+		}
+		__asm("CPSIE i");	/* enable interrupts */
+	}
 }
-
-/* Callbacks in C (https://www.geeksforgeeks.org/) */
-/*
- * A callback is any executable code that is passed as an argument to another
- * code, which is expected to call back (execute) the argument at a given time.
- * In simple language, If a reference of a function is passed to another
- * function as an argument to call it, then it will be called a Callback
- * function.
- */
 
 void HAL_SYSTICK_Callback(void)
 {
+	/* Update Tick Counter */
 	g_app_tick_cnt++;
 
-
-
-	//HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
+	g_task_sensor_tick_cnt++;
+	g_task_menu_tick_cnt++;
 }
 
 /********************** end of file ******************************************/

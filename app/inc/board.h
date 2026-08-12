@@ -47,14 +47,22 @@ extern "C" {
 
 /********************** macros ***********************************************/
 #define NUCLEO_F103RC		(0)
-#define NUCLEO_F401RE		(1)
-#define NUCLEO_F446RE		(2)
-#define NUCLEO_F429ZI		(3)
-#define NUCLEO_F439ZI		(4)
-#define NUCLEO_F413ZH		(5)
-#define STM32F429I_DISCO1	(6)
+#define NUCLEO_F303R8		(1)
+#define NUCLEO_F401RE		(2)
+#define NUCLEO_F446RE		(3)
+#define NUCLEO_F413ZH		(4)
+#define NUCLEO_F429ZI		(5)
+#define NUCLEO_F439ZI		(6)
+#define NUCLEO_F767ZI		(7)
+#define STM32F407G_DISC1	(8)
+#define STM32F429I_DISC1	(9)
 
 #define BOARD (NUCLEO_F103RC)
+
+/* STM32 Nucleo Boards - 32 Pins */
+#if (BOARD == NUCLEO_F303R8)
+
+#endif
 
 /* STM32 Nucleo Boards - 64 Pins */
 #if ((BOARD == NUCLEO_F103RC) || (BOARD == NUCLEO_F401RE) || (BOARD == NUCLEO_F446RE))
@@ -64,14 +72,30 @@ extern "C" {
 #define BTN_A_PRESSED	GPIO_PIN_RESET
 #define BTN_A_HOVER		GPIO_PIN_SET
 
+#define BTN_ENT_PIN		D10_Pin
+#define BTN_ENT_PORT	D10_GPIO_Port
+#define BTN_ENT_PRESSED	GPIO_PIN_RESET
+#define BTN_ENT_HOVER	GPIO_PIN_SET
+
+#define BTN_NEX_PIN		D11_Pin
+#define BTN_NEX_PORT	D11_GPIO_Port
+#define BTN_NEX_PRESSED	GPIO_PIN_RESET
+#define BTN_NEX_HOVER	GPIO_PIN_SET
+
+#define BTN_ESC_PIN		D12_Pin
+#define BTN_ESC_PORT	D12_GPIO_Port
+#define BTN_ESC_PRESSED	GPIO_PIN_RESET
+#define BTN_ESC_HOVER	GPIO_PIN_SET
+
 #define LED_A_PIN		LD2_Pin
 #define LED_A_PORT		LD2_GPIO_Port
 #define LED_A_ON		GPIO_PIN_SET
 #define LED_A_OFF		GPIO_PIN_RESET
 
-#endif/* STM32 Nucleo Boards - 144 Pins */
+#endif
 
-#if ((BOARD == NUCLEO_F429ZI) || (BOARD == NUCLEO_F439ZI) || (BOARD == NUCLEO_F413ZH))
+/* STM32 Nucleo Boards - 144 Pins */
+#if ((BOARD == NUCLEO_F413ZH) || (BOARD == NUCLEO_F429ZI) || (BOARD == NUCLEO_F439ZI) || (BOARD == NUCLEO_F767ZI))
 
 #define BTN_A_PIN		USER_Btn_Pin
 #define BTN_A_PORT		USER_Btn_GPIO_Port
@@ -86,7 +110,7 @@ extern "C" {
 #endif
 
 /* STM32 Discovery Kits */
-#if (BOARD == STM32F429I_DISCO1)
+#if ((BOARD == STM32F407G_DISC1) || (BOARD == STM32F429I_DISC1))
 
 #define BTN_A_PIN		B1_Pin
 #define BTN_A_PORT		B1_GPIO_Port
