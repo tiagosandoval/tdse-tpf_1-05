@@ -48,14 +48,14 @@ extern "C" {
 #include <stdbool.h>
 
 /********************** macros ***********************************************/
-#define TEST_NORMAL      (0)
+#define TEST_PROD        (0)
 #define TEST_IMU_ONLY    (1)
 #define TEST_SERVO_ONLY  (2)
 #define TEST_I2C_SCAN    (3)
 #define TEST_AXIS_CAL    (4)
 
 // #define TEST_X (TEST_IMU_ONLY)
-#define TEST_X (TEST_NORMAL)
+#define TEST_X (TEST_PROD)
 
 /********************** typedef **********************************************/
 typedef struct

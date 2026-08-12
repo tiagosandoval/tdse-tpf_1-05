@@ -74,12 +74,12 @@ typedef struct {
 const task_cfg_t task_cfg_list[] = {
     {task_sensor_init, task_sensor_update, NULL},
 
-#if (TEST_X == TEST_NORMAL) || (TEST_X == TEST_IMU_ONLY) || \
+#if (TEST_X == TEST_PROD) || (TEST_X == TEST_IMU_ONLY) || \
     (TEST_X == TEST_I2C_SCAN) || (TEST_X == TEST_AXIS_CAL)
     {task_imu_init, task_imu_update, &shared_data},
 #endif
 
-#if (TEST_X == TEST_NORMAL) || (TEST_X == TEST_SERVO_ONLY) || \
+#if (TEST_X == TEST_PROD) || (TEST_X == TEST_SERVO_ONLY) || \
     (TEST_X == TEST_AXIS_CAL)
     {task_servo_init, task_servo_update, &shared_data},
 #endif
