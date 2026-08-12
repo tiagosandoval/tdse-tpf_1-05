@@ -51,7 +51,7 @@ Dos detalles que no se ven en la fórmula:
   que las tareas no corren a un período fijo. Cada iteración calcula el intervalo real con
   `HAL_GetTick()`.
 - **`alpha` y el período de muestreo van juntos.** La constante de tiempo del cruce vale
-  `alpha·dt/(1−alpha)`, unos 100 ms con el `dt` actual. Si cambiás la frecuencia de
+  `alpha·dt/(1−alpha)`, unos 100 ms con el `dt` actual. Si se cambia la frecuencia de
   ejecución de la tarea, hay que recalcular `alpha` para conservar el comportamiento.
 
 La salida se corrige con un offset fijo para que 0° sea la vertical, y cada lectura
