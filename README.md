@@ -29,7 +29,7 @@ contra la referencia y se corrige la posición del servo.
 Ninguno de los dos sensores sirve solo. El acelerómetro da la inclinación absoluta a
 partir de la dirección de la gravedad y no acumula error con el tiempo, pero se ensucia
 con cualquier aceleración que no sea la gravedad — es decir, justo con el movimiento que
-el sistema tiene que corregir. El giróscopo mide velocidad angular y responde al toque,
+el sistema tiene que corregir. El giróscopo mide velocidad angular y responde al instante,
 pero hay que integrarlo, y esa integral deriva.
 
 El filtro los combina con un solo coeficiente (`task_imu.c`):
